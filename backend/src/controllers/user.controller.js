@@ -308,7 +308,7 @@ const findMe = asyncHandler(async (req, res) => {
 const sendFriendRequest = asyncHandler(async (req, res) => {
 
     const { receiverId } = req.body;
-    const senderId = req.user._id;
+    const senderId = req.user?._id;
     // console.log(receiverId)
     // console.log(senderId)
     if (!receiverId) {
@@ -348,11 +348,11 @@ const sendFriendRequest = asyncHandler(async (req, res) => {
 
         //faster logic and less db call
 
-        await Promise.all([
-            User.findByIdAndUpdate(senderId, { $addToSet: { requestSent: receiverId } }),
-            User.findByIdAndUpdate(receiverId, { $addToSet: { pendingRequest: senderId } })
+        // await Promise.all([
+        //     User.findByIdAndUpdate(senderId, { $addToSet: { requestSent: receiverId } }),
+        //     User.findByIdAndUpdate(receiverId, { $addToSet: { pendingRequest: senderId } })
 
-        ])
+        // ])
         return res
             .status(200)
             .json(new ApiResponse(200, { receiver: receiver?.username }, "friend request sent succesfully"))
