@@ -25,15 +25,7 @@ const generateAccessAndRefreshToken = async (userId) => {
     }
 
 }
-async function handleProfileImage(req) {
-  const profileImagePath = req.files?.profileImage?.[0]?.path;
-  if (!profileImagePath) throw new ApiError(400, "Profile image path is missing");
 
-  const uploaded = await uploadOnCloudinary(profileImagePath);
-  if (!uploaded) throw new ApiError(400, "Failed to upload profile image");
-
-  return uploaded.url;
-}
 
 const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password, fullname } = req.body
@@ -44,9 +36,9 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "all field are required")
     }
     const existingUserWithSameUsername = await User.findOne({ username });
-if (existingUserWithSameUsername) {
-  throw new ApiError(409, "Username is already taken");
-}
+    if (existingUserWithSameUsername) {
+        throw new ApiError(409, "Username is already taken");
+    }
     // const existedUserByUsername = await User.findOne({
     //     username: username,
     //     isVerified: true
@@ -59,7 +51,7 @@ if (existingUserWithSameUsername) {
     const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
     if (existedUserByEmail) {
         if (existedUserByEmail.isVerified) {
-            throw new ApiError(409,"email is already registered");
+            throw new ApiError(409, "email is already registered");
         }
         else {
             existedUserByEmail.username = username;
@@ -67,78 +59,78 @@ if (existingUserWithSameUsername) {
             existedUserByEmail.fullname = fullname;
             existedUserByEmail.verifyCode = verifyCode;
             existedUserByEmail.expireyVerificationCode = new Date(Date.now() + 3600000);
-           const profileImagePath = req.files?.profileImage?.[0]?.path;
-  if (!profileImagePath) throw new ApiError(400, "Profile image path is missing");
-  const uploaded = await uploadOnCloudinary(profileImagePath);
-  if (!uploaded) throw new ApiError(400, "Failed to upload profile image");
-            existedUserByEmail.profileImage=uploaded?.url
+            const profileImagePath = req.files?.profileImage?.[0]?.path;
+            if (!profileImagePath) throw new ApiError(400, "Profile image path is missing");
+            const uploaded = await uploadOnCloudinary(profileImagePath);
+            if (!uploaded) throw new ApiError(400, "Failed to upload profile image");
+            existedUserByEmail.profileImage = uploaded?.url
             await existedUserByEmail.save();
         }
     }
     else {
-     
-            const profileImagePath = req.files?.profileImage?.[0]?.path;
-  if (!profileImagePath) throw new ApiError(400, "Profile image path is missing");
-  const uploaded = await uploadOnCloudinary(profileImagePath);
-  if (!uploaded) throw new ApiError(400, "Failed to upload profile image");
+
+        const profileImagePath = req.files?.profileImage?.[0]?.path;
+        if (!profileImagePath) throw new ApiError(400, "Profile image path is missing");
+        const uploaded = await uploadOnCloudinary(profileImagePath);
+        if (!uploaded) throw new ApiError(400, "Failed to upload profile image");
         const user = await User.create({
             username: username,
             fullname,
             email,
             password,
-            profileImage:uploaded?.url,
-            verifyCode:verifyCode,
-            expireyVerificationCode:new Date(Date.now()+3600000)
+            profileImage: uploaded?.url,
+            verifyCode: verifyCode,
+            expireyVerificationCode: new Date(Date.now() + 3600000)
 
         })
     }
 
-    const sendEmailResponse = await SendVerificationCode(email,username,verifyCode);
-    if(!sendEmailResponse){
-        throw new ApiError(500,"their is an error during email verification")
+    const sendEmailResponse = await SendVerificationCode(email, username, verifyCode);
+    if (!sendEmailResponse) {
+        throw new ApiError(500, "their is an error during email verification")
     }
     return res
         .status(200)
-        .json(new ApiResponse(200,"user registered succesfully"))
+        .json(new ApiResponse(200, "user registered succesfully"))
 
 })
 
-const verifyEmail = asyncHandler(async (req,res)=>{
+const verifyEmail = asyncHandler(async (req, res) => {
     console.log("verifyemail")
-const {email,verifyCode} = req.body
-console.log(email)
-console.log(verifyCode)
-if(!email || !verifyCode){
-    throw new ApiError(400,"please provide valid credential")
-}
-const user = await User.findOne({email:email}).select("-refreshToken -password -friends")
+    const { email, verifyCode } = req.body
+    console.log(email)
+    console.log(verifyCode)
+    if (!email || !verifyCode) {
+        throw new ApiError(400, "please provide valid credential")
+    }
+    const user = await User.findOne({ email: email }).select("-refreshToken -password -friends")
 
-if(!user){
-    throw new ApiError(404,"please provide an valid email")
-}
+    if (!user) {
+        throw new ApiError(404, "please provide an valid email")
+    }
 
 
-if (user.verifyAttempt == 0) {
-   throw new ApiError(429, "Too many incorrect attempts. Try again later.");
- }
+    if (user.verifyAttempt == 0) {
+        throw new ApiError(429, "Too many incorrect attempts. Try again later.");
+    }
 
-if(user.verifyCode!=verifyCode){
-    user.verifyAttempt--;
-    await user.save();
-    throw new ApiError(404,"invalid verification code")
-}
+    if (user.verifyCode != verifyCode) {
+        user.verifyAttempt--;
+        await user.save();
+        throw new ApiError(404, "invalid verification code")
+    }
 
-if(user.expireyVerificationCode < Date.now()){
-    throw new ApiError(404,"your token is invalid")
-}
-if(user.verifyCode==verifyCode)
-user.isVerified=true;
-user.verifyAttempt=0;
+    if (user.expireyVerificationCode < Date.now()) {
+        throw new ApiError(404, "your token is invalid")
+    }
+    if (user.verifyCode == verifyCode)
+        user.isVerified = true;
+    user.verifyAttempt = 0;
 
-await user.save()
-return res
-.status(200)
-.json(new ApiResponse(200,{},"user verified sucessfully"))
+    await user.save()
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "user verified sucessfully"))
 
 })
 
@@ -151,8 +143,8 @@ const userLogin = asyncHandler(async (req, res) => {
         throw new ApiError(400, "account does not available")
     }
 
-    if(!user.isVerified){
-        throw new ApiError(404,"please verify your email before login")
+    if (!user.isVerified) {
+        throw new ApiError(404, "please verify your email before login")
     }
 
     const isPasswordCorrect = await user.isPasswordCorrect(password)
@@ -371,13 +363,31 @@ const sendFriendRequest = asyncHandler(async (req, res) => {
 
 const pendingRequest = asyncHandler(async (req, res) => {
     try {
-        const request = await User.findById(req?._id).select("pendingRequest")
-        if (!request) {
-            throw new ApiError(404, "user not found.invalid token or token get expired")
-        }
+        const request = await FriendRequest.find({
+            receiver: req.user?._id,
+            status: "pending"
+        }).populate("sender", "username email profileImage _id fullname")
+         if (request.length === 0) {
+    return res.status(200).json(new ApiResponse(200, [], "No friends found"));}
         return res
             .status(200)
-            .json(200, request, "pending request fetched succesfully")
+            .json(new ApiResponse(200, request, "pending request fetched succesfully"))
+
+    } catch (error) {
+        throw new ApiError(500, error.message || "error during fetching request")
+    }
+})
+const requestSent = asyncHandler(async (req, res) => {
+    try {
+        const request = await FriendRequest.find({
+            sender: req.user?._id,
+            status: "pending"
+        }).populate("receiver", "username email profileImage _id fullname")
+        if (request.length === 0) {
+    return res.status(200).json(new ApiResponse(200, [], "No friends found"));}
+        return res
+            .status(200)
+            .json(new ApiResponse(200, request, "pending request fetched succesfully"))
 
     } catch (error) {
         throw new ApiError(500, error.message || "error during fetching request")
@@ -390,71 +400,21 @@ const acceptRequest = asyncHandler(async (req, res) => {
     if (!senderUsername) {
         throw new ApiError(404, "please provide a valid username to accept the friend request")
     }
-    const receiverId = req._id;
+    const sender = await User.findOne({
+        username: senderUsername
+    }).select(" _id username ")
+    const receiverId = req.user?._id;
     if (!receiverId) {
         throw new ApiError(404, "please login")
     }
-    if (senderUsername === req.username) {
+    if (senderUsername === req.user.username) {
         throw new ApiError(400, "Cannot accept your own friend request");
     }
     session.startTransaction();
     try {
-
-        // THIS IS ALSO IS GOOD AS BEGINER
-
-
-        const sender = await User.findOneAndUpdate({ username: senderUsername }, {
-            $pull: {
-                requestSent: receiverId
-            },
-            $addToSet: {
-                friends: receiverId
-            },
-
-        }, { new: true, session });
-        if (!sender) {
-            throw new ApiError(404, "cannot find sender in accepting friend request")
-        }
-        const receiver = await User.findByIdAndUpdate(receiverId, {
-            $pull: {
-                pendingRequest: sender?._id
-            },
-            $addToSet: {
-                friends: sender?._id
-            }
-        }, { new: true, session })
-        if (!receiver) {
-            throw new ApiError(404, "cannot find reciever in accepting friend request")
-        }
-
-
-        // TRY Promise.all() WHEN YOU REQUIRED A MULTIPLE DB CALL 
-
-        // MORE CLEAN AND OPTIMIZE can be used when no logic depend upon variable that does not depend on variable outside promise object ie. sender
-        // const [receiver,sender] = await Promise.all([
-        //     await User.findByIdAndUpdate(receiverId,{
-        //     $pull:{
-        //         pendingRequest:sender?._id
-        //     },
-        //     $addToSet:{
-        //         friends:sender?._id
-        //     }
-        // },{new:true,session}),
-        // await User.findOneAndUpdate({username:senderUsername},{
-        //     $pull:{
-        //         requestSent:receiverId
-        //     },
-        //     $addToSet:{
-        //         friends:receiverId
-        //     },
-
-        // },{new:true,session})
-
-        // ])
-
         const updateFriendRequestModel = await FriendRequest.findOneAndUpdate({
             senderId: sender?._id,
-            receiverId: receiver?._id
+            receiverId: receiverId
         },
             { status: "accepted" },
             { new: true, session }
@@ -463,16 +423,58 @@ const acceptRequest = asyncHandler(async (req, res) => {
         if (!updateFriendRequestModel) {
             throw new ApiError(404, "failed to update friendrequest model")
         }
-
+        const recieverUsername = req.user?.username
         await session.commitTransaction();
         session.endSession()
         return res.status(202).json({
-            message: `${sender.username} and ${receiver.username} are now friends`
+            message: `${sender.username} and ${recieverUsername} are now friends`
         });
     } catch (error) {
         await session.abortTransaction()
         throw new ApiError(500, "something went wrong during accepting friend request")
     }
+
+})
+
+const getFriends = asyncHandler(async (req, res) => {
+    const userId = req.user?._id
+    const friends = await FriendRequest.find({
+        $or: [
+            {
+                sender: userId,
+                status: "accepted"
+            },
+            {
+                receiver: userId,
+                status: "accepted"
+            }
+        ]
+    })
+        .populate("sender", "username fullname _id profileImage email")
+        .populate("receiver", "username fullname _id profileImage email")
+
+
+        if (friends.length === 0) {
+    return res.status(200).json(new ApiResponse(200, [], "No friends found"));
+}
+
+    const friendList = friends.map((req) => {
+        const isSender = req.sender._id.toString() === userId.toString();
+        const friendUser = isSender ? req.receiver : req.sender
+
+        return {
+            _id: friendUser._id,
+            username: friendUser.username,
+            fullname: friendUser.fullname,
+            email: friendUser.email,
+            profileImage: friendUser.profileImage,
+
+        }
+    })
+
+return res
+.status(200)
+.json(new ApiResponse(200,friendList,"friends are fetched sucessfully"))
 
 })
 
@@ -491,5 +493,7 @@ export {
     pendingRequest,
     acceptRequest,
     findMe,
-    verifyEmail
+    verifyEmail,
+    getFriends,
+    requestSent
 }

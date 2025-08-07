@@ -108,7 +108,7 @@ function Sidebar() {
                 </div>
               </Link>
             </li>
-            <li>
+            {/* <li>
               
               <Link to={isLoggedIn ? "/pending-requests" : ""}>
                 <div className="p-3 pl-4 text-zinc-500 hover:bg-zinc-700 hover:text-white rounded cursor-pointer transition-colors duration-200 flex items-center gap-3">
@@ -116,7 +116,7 @@ function Sidebar() {
                   <span>Pending Requests</span>
                 </div>
               </Link>
-            </li>
+            </li> */}
           </ul>
         </nav>
 

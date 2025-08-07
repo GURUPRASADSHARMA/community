@@ -1,230 +1,454 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Users, Heart, MessageCircle, UserPlus, Star } from 'lucide-react';
-
+import React, { useEffect, useState } from 'react';
+import { User, MessageCircle, UserPlus, Clock, Send, Smile, Paperclip, X } from 'lucide-react';
+import axios from 'axios'
 const mockFriends = [
   {
-    id: 1,
-    username: 'alex_chen',
-    name: 'Alex Chen',
-    avatar: 'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    status: 'online',
-    mutualFriends: 12,
-    isVerified: true,
-    lastSeen: 'now'
+    id: '1',
+    fullName: 'Alice Johnson',
+    username: '@alice_j',
+    profilePic: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    isOnline: true,
   },
   {
-    id: 2,
-    username: 'sarah_jones',
-    name: 'Sarah Jones',
-    avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    status: 'away',
-    mutualFriends: 8,
-    isVerified: false,
-    lastSeen: '5 min ago'
+    id: '2',
+    fullName: 'Bob Smith',
+    username: '@bob_smith',
+    profilePic: 'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    isOnline: false,
+    lastSeen: '2 hours ago',
   },
   {
-    id: 3,
-    username: 'mike_wilson',
-    name: 'Mike Wilson',
-    avatar: 'https://images.pexels.com/photos/1680172/pexels-photo-1680172.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    status: 'offline',
-    mutualFriends: 23,
-    isVerified: true,
-    lastSeen: '2 hours ago'
+    id: '3',
+    fullName: 'Carol Davis',
+    username: '@carol_d',
+    profilePic: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    isOnline: true,
   },
   {
-    id: 4,
-    username: 'emma_davis',
-    name: 'Emma Davis',
-    avatar: 'https://images.pexels.com/photos/1858175/pexels-photo-1858175.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    status: 'online',
-    mutualFriends: 15,
-    isVerified: false,
-    lastSeen: 'now'
-  },
-  {
-    id: 5,
-    username: 'david_kim',
-    name: 'David Kim',
-    avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    status: 'away',
-    mutualFriends: 7,
-    isVerified: true,
-    lastSeen: '1 hour ago'
-  },
-  {
-    id: 6,
-    username: 'lisa_garcia',
-    name: 'Lisa Garcia',
-    avatar: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    status: 'online',
-    mutualFriends: 31,
-    isVerified: true,
-    lastSeen: 'now'
+    id: '4',
+    fullName: 'David Wilson',
+    username: '@david_w',
+    profilePic: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    isOnline: false,
+    lastSeen: '1 day ago',
   }
 ];
 
-function App() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredFriends, setFilteredFriends] = useState(mockFriends);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState('all');
+const mockPendingRequests = [
+  {
+    id: '5',
+    fullName: 'Emma Brown',
+    username: '@emma_b',
+    profilePic: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    isOnline: true,
+  },
+  {
+    id: '6',
+    fullName: 'Frank Miller',
+    username: '@frank_m',
+    profilePic: 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    isOnline: false,
+    lastSeen: '30 minutes ago',
+  }
+];
 
-  useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      let filtered = mockFriends.filter(friend =>
-        friend.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        friend.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+const mockSentRequests = [
+  {
+    id: '7',
+    fullName: 'Grace Lee',
+    username: '@grace_lee',
+    profilePic: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    isOnline: true,
+  },
+  {
+    id: '8',
+    fullName: 'Henry Taylor',
+    username: '@henry_t',
+    profilePic: 'https://images.pexels.com/photos/1212984/pexels-photo-1212984.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    isOnline: false,
+    lastSeen: '5 minutes ago',
+  }
+];
 
-      if (selectedFilter !== 'all') {
-        filtered = filtered.filter(friend => friend.status === selectedFilter);
-      }
+const mockMessages = [
+  {
+    id: '1',
+    senderId: 'me',
+    content: 'Hey! How are you doing?',
+    timestamp: new Date('2025-01-27T10:30:00'),
+    isRead: true,
+  },
+  {
+    id: '2',
+    senderId: '1',
+    content: 'Hi! I\'m doing great, thanks for asking! How about you?',
+    timestamp: new Date('2025-01-27T10:31:00'),
+    isRead: true,
+  },
+  {
+    id: '3',
+    senderId: 'me',
+    content: 'I\'m good too! Working on some exciting projects.',
+    timestamp: new Date('2025-01-27T10:32:00'),
+    isRead: true,
+  },
+  {
+    id: '4',
+    senderId: '1',
+    content: 'That sounds awesome! Would love to hear more about it sometime.',
+    timestamp: new Date('2025-01-27T10:33:00'),
+    isRead: false,
+  }
+];
 
-      setFilteredFriends(filtered);
-      setIsLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, selectedFilter]);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'online': return 'bg-green-400';
-      case 'away': return 'bg-yellow-400';
-      case 'offline': return 'bg-gray-400';
-      default: return 'bg-gray-400';
-    }
-  };
-
-  const FriendCard = ({ friend, index }) => (
-    <div 
-      className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-100 group animate-fadeInUp"
-      style={{ animationDelay: `${index * 100}ms` }}
-    >
-      <div className="flex items-center space-x-4 mb-4">
+function FriendCard({ friend, showMessageButton = false, onMessage }) {
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
+      <div className="flex items-center space-x-4">
         <div className="relative">
           <img
-            src={friend.avatar}
-            alt={friend.name}
-            className="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-lg group-hover:ring-blue-200 transition-all duration-300"
+            src={friend.profilePic}
+            alt={friend.fullName}
+            className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100"
           />
-          <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${getStatusColor(friend.status)} rounded-full border-2 border-white`}></div>
+          <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${
+            friend.isOnline ? 'bg-green-500' : 'bg-gray-400'
+          } transition-colors duration-200`}></div>
         </div>
+        
         <div className="flex-1">
-          <div className="flex items-center space-x-2">
-            <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-              {friend.name}
-            </h3>
-            {friend.isVerified && (
-              <Star className="w-4 h-4 text-yellow-500 fill-current animate-pulse" />
-            )}
-          </div>
-          <p className="text-gray-500 text-sm">@{friend.username}</p>
-          <p className="text-xs text-gray-400 mt-1">{friend.mutualFriends} mutual friends</p>
+          <h3 className="font-semibold text-gray-900 text-lg">{friend.fullName}</h3>
+          <p className="text-gray-500 text-sm">{friend.username}</p>
+          {!friend.isOnline && friend.lastSeen && (
+            <p className="text-gray-400 text-xs mt-1">Last seen {friend.lastSeen}</p>
+          )}
+          {friend.isOnline && (
+            <p className="text-green-500 text-xs mt-1 font-medium">Online</p>
+          )}
         </div>
-      </div>
-      
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <span className="text-xs text-gray-500">Last seen {friend.lastSeen}</span>
-        <div className="flex space-x-2">
-          <button className="p-2 rounded-full hover:bg-blue-50 text-blue-600 hover:scale-110 transition-all duration-200">
-            <MessageCircle className="w-4 h-4" />
+        
+        {showMessageButton && (
+          <button
+            onClick={() => onMessage && onMessage(friend)}
+            className="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-200 transform hover:scale-110 active:scale-95"
+          >
+            <MessageCircle size={20} />
           </button>
-          <button className="p-2 rounded-full hover:bg-green-50 text-green-600 hover:scale-110 transition-all duration-200">
-            <UserPlus className="w-4 h-4" />
-          </button>
-          <button className="p-2 rounded-full hover:bg-red-50 text-red-600 hover:scale-110 transition-all duration-200">
-            <Heart className="w-4 h-4" />
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
+}
+
+function MessagePanel({ friend, isOpen, onClose }) {
+  const [newMessage, setNewMessage] = useState('');
+  const [messages, setMessages] = useState(mockMessages);
+  const [isTyping, setIsTyping] = useState(false);
+
+  const sendMessage = () => {
+    if (!newMessage.trim()) return;
+    
+    const message = {
+      id: Date.now().toString(),
+      senderId: 'me',
+      content: newMessage,
+      timestamp: new Date(),
+      isRead: false,
+    };
+    
+    setMessages(prev => [...prev, message]);
+    setNewMessage('');
+    
+    // Simulate typing indicator
+    setIsTyping(true);
+    setTimeout(() => {
+      setIsTyping(false);
+      const replyMessage = {
+        id: (Date.now() + 1).toString(),
+        senderId: friend?.id || '1',
+        content: 'Thanks for your message! 😊',
+        timestamp: new Date(),
+        isRead: false,
+      };
+      setMessages(prev => [...prev, replyMessage]);
+    }, 2000);
+  };
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
-              <Users className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Friend Finder
-              </h1>
-              <p className="text-gray-600">Discover and connect with amazing people</p>
-            </div>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative mb-6">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search friends by username or name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-gray-700 placeholder-gray-400 shadow-sm"
+    <>
+      {/* Overlay */}
+      <div
+        className={`fixed inset-0 bg-black transition-opacity duration-300 z-40 ${
+          isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+      
+      {/* Message Panel */}
+      <div className={`fixed right-0 top-0 h-full w-96 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
+        isOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}>
+        {friend && (
+          <>
+            {/* Header */}
+            <div className="bg-blue-500 text-white p-6 flex items-center space-x-4">
+              <img
+                src={friend.profilePic}
+                alt={friend.fullName}
+                className="w-12 h-12 rounded-full object-cover ring-2 ring-white/20"
               />
-            </div>
-          </div>
-
-          {/* Filter Buttons */}
-          <div className="flex space-x-3">
-            {['all', 'online', 'away', 'offline'].map((filter) => (
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg">{friend.fullName}</h3>
+                <p className="text-blue-100 text-sm">{friend.username}</p>
+                <div className="flex items-center mt-1">
+                  <div className={`w-2 h-2 rounded-full mr-2 ${friend.isOnline ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+                  <span className="text-blue-100 text-xs">
+                    {friend.isOnline ? 'Online' : `Last seen ${friend.lastSeen}`}
+                  </span>
+                </div>
+              </div>
               <button
-                key={filter}
-                onClick={() => setSelectedFilter(filter)}
-                className={`px-6 py-2 rounded-full font-medium text-sm transition-all duration-200 transform hover:scale-105 ${
-                  selectedFilter === filter
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                    : 'bg-white text-gray-600 hover:bg-gray-50 shadow-sm'
+                onClick={onClose}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors duration-200"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div className="h-[calc(100%-180px)] overflow-y-auto p-4 space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.senderId === 'me' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+                >
+                  <div className={`max-w-[80%] p-3 rounded-2xl ${
+                    message.senderId === 'me'
+                      ? 'bg-blue-500 text-white ml-4'
+                      : 'bg-gray-100 text-gray-800 mr-4'
+                  } shadow-sm`}>
+                    <p className="text-sm">{message.content}</p>
+                    <p className={`text-xs mt-1 ${
+                      message.senderId === 'me' ? 'text-blue-100' : 'text-gray-500'
+                    }`}>
+                      {formatTime(message.timestamp)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              
+              {isTyping && (
+                <div className="flex justify-start animate-pulse">
+                  <div className="bg-gray-100 text-gray-800 p-3 rounded-2xl mr-4 shadow-sm">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Message Input */}
+            <div className="border-t border-gray-200 p-4">
+              <div className="flex items-center space-x-3">
+                <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                  <Paperclip size={20} />
+                </button>
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  placeholder="Type a message..."
+                  className="flex-1 border border-gray-200 rounded-full px-4 py-2 focus:outline-none focus:border-blue-500 transition-colors duration-200"
+                />
+                <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                  <Smile size={20} />
+                </button>
+                <button
+                  onClick={sendMessage}
+                  disabled={!newMessage.trim()}
+                  className="p-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-full transition-all duration-200 transform hover:scale-110 active:scale-95 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <Send size={18} />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+function App() {
+
+  async function getfriend(){
+    try {
+      const friends = await axios.get("/api/v1/user/getfriends");
+      // console.log("hii getfriend")
+      console.log(friends.data.data)
+      mockFriends.push(...(friends.data.data || []))
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  async function pendingRequest(){
+    try {
+      const friends = await axios.get("/api/v1/user/pending-request");
+      console.log(friends.data.data)
+      // console.log("hii pending request")
+      mockPendingRequests.push(...(friends.data.data || []))
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  async function requestSent(){
+    try {
+      const friends = await axios.get("/api/v1/user/request-sent");
+      console.log(friends.data.data)
+      mockSentRequests.push(...(friends.data.data || []))
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+   useEffect(() => {
+  const fetchAll = async () => {
+    try {
+    
+      await getfriend();
+
+      await pendingRequest();
+
+      await requestSent();
+
+    } catch (error) {
+      console.error("❌ Error in fetchAll():", error?.response?.data || error.message || error);
+    }
+  };
+
+  fetchAll();
+  // getfriend();
+  // pendingRequest();
+  // requestSent();
+}, []);
+
+
+  const [activeTab, setActiveTab] = useState('friends');
+  const [selectedFriend, setSelectedFriend] = useState(null);
+  const [isMessagePanelOpen, setIsMessagePanelOpen] = useState(false);
+
+  const handleMessage = (friend) => {
+    setSelectedFriend(friend);
+    setIsMessagePanelOpen(true);
+  };
+
+  const closeMessagePanel = () => {
+    setIsMessagePanelOpen(false);
+    setTimeout(() => setSelectedFriend(null), 300);
+  };
+
+  const tabs = [
+    { id: 'friends', label: 'Friends', icon: User, count: mockFriends.length },
+    { id: 'pending', label: 'Pending', icon: Clock, count: mockPendingRequests.length },
+    { id: 'sent', label: 'Sent', icon: UserPlus, count: mockSentRequests.length },
+  ];
+
+  const getCurrentData = () => {
+    switch (activeTab) {
+      case 'friends': return mockFriends;
+      case 'pending': return mockPendingRequests;
+      case 'sent': return mockSentRequests;
+      default: return mockFriends;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Friends</h1>
+          <p className="text-gray-600 text-lg">Manage your connections and stay in touch</p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-full p-2 shadow-sm border border-gray-200">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-6 py-3 rounded-full transition-all duration-200 transform ${
+                  activeTab === tab.id
+                    ? 'bg-blue-500 text-white shadow-md scale-105'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                 }`}
               >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                <tab.icon size={18} />
+                <span className="font-medium">{tab.label}</span>
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  activeTab === tab.id
+                    ? 'bg-white/20 text-white'
+                    : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {tab.count}
+                </span>
               </button>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-            <span className="ml-4 text-gray-600 font-medium">Searching...</span>
-          </div>
-        ) : filteredFriends.length > 0 ? (
-          <>
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {searchQuery ? `Search Results (${filteredFriends.length})` : `All Friends (${filteredFriends.length})`}
-              </h2>
+        {/* Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {getCurrentData().map((friend, index) => (
+            <div
+              key={friend.id}
+              className="animate-fadeIn"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <FriendCard
+                friend={friend}
+                showMessageButton={activeTab === 'friends'}
+                onMessage={handleMessage}
+              />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredFriends.map((friend, index) => (
-                <FriendCard key={friend.id} friend={friend} index={index} />
-              ))}
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {getCurrentData().length === 0 && (
+          <div className="text-center py-16">
+            <div className="bg-white rounded-full w-24 h-24 mx-auto flex items-center justify-center mb-6 shadow-sm">
+              <User size={32} className="text-gray-400" />
             </div>
-          </>
-        ) : (
-          <div className="text-center py-20">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
-              <Search className="w-12 h-12 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No friends found</h3>
-            <p className="text-gray-600 max-w-md mx-auto">
-              Try adjusting your search terms or filters to find the friends you're looking for.
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">No {activeTab} found</h3>
+            <p className="text-gray-500">
+              {activeTab === 'friends' && "Start connecting with people!"}
+              {activeTab === 'pending' && "No pending friend requests."}
+              {activeTab === 'sent' && "No sent friend requests."}
             </p>
           </div>
         )}
       </div>
+
+      {/* Message Panel */}
+      <MessagePanel
+        friend={selectedFriend}
+        isOpen={isMessagePanelOpen}
+        onClose={closeMessagePanel}
+      />
     </div>
   );
 }
