@@ -95,6 +95,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 })
 
+
 const verifyEmail = asyncHandler(async (req, res) => {
     console.log("verifyemail")
     const { email, verifyCode } = req.body
@@ -133,6 +134,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "user verified sucessfully"))
 
 })
+
 
 const userLogin = asyncHandler(async (req, res) => {
     const { username, password } = req.body
@@ -174,6 +176,7 @@ const userLogin = asyncHandler(async (req, res) => {
         ))
 })
 
+
 const userLogout = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(req.user._id,
         {
@@ -199,6 +202,7 @@ const userLogout = asyncHandler(async (req, res) => {
 
 
 })
+
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
@@ -236,6 +240,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 })
 
+
 const findUser = asyncHandler(async (req, res) => {
     const { username } = req.body
 
@@ -249,6 +254,7 @@ const findUser = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, users, "user found sucessfully"))
 })
+
 
 const changeProfileImage = asyncHandler(async (req, res) => {
     const newProfileImagePath = req.files?.path
@@ -272,6 +278,7 @@ const changeProfileImage = asyncHandler(async (req, res) => {
 
 })
 
+
 const passwordReset = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body
     const user = User.findById(req.user?._id)
@@ -286,6 +293,7 @@ const passwordReset = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "your password reset sucessfuly"))
 
 })
+
 
 const findMe = asyncHandler(async (req, res) => {
     try {
@@ -304,6 +312,7 @@ const findMe = asyncHandler(async (req, res) => {
         throw new Error("please refresh the token.token is invalid")
     }
 })
+
 
 const sendFriendRequest = asyncHandler(async (req, res) => {
 
@@ -361,6 +370,7 @@ const sendFriendRequest = asyncHandler(async (req, res) => {
     }
 })
 
+
 const pendingRequest = asyncHandler(async (req, res) => {
     try {
         const request = await FriendRequest.find({
@@ -377,6 +387,8 @@ const pendingRequest = asyncHandler(async (req, res) => {
         throw new ApiError(500, error.message || "error during fetching request")
     }
 })
+
+
 const requestSent = asyncHandler(async (req, res) => {
     try {
         const request = await FriendRequest.find({
@@ -393,6 +405,7 @@ const requestSent = asyncHandler(async (req, res) => {
         throw new ApiError(500, error.message || "error during fetching request")
     }
 })
+
 
 const acceptRequest = asyncHandler(async (req, res) => {
     const session = await mongoose.startSession()
@@ -436,6 +449,7 @@ const acceptRequest = asyncHandler(async (req, res) => {
 
 })
 
+
 const getFriends = asyncHandler(async (req, res) => {
     const userId = req.user?._id
     const friends = await FriendRequest.find({
@@ -477,9 +491,6 @@ return res
 .json(new ApiResponse(200,friendList,"friends are fetched sucessfully"))
 
 })
-
-
-
 
 export {
     registerUser,
