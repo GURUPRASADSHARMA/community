@@ -1,8 +1,12 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 
+
 function Home() {
+
+
+
   const userLoggedIn = useSelector((state)=>state.auth)
   console.log(userLoggedIn)
   return (

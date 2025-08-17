@@ -6,8 +6,26 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 // import Header from './Header';
 // import Sidebar from './Sidebar';
+import { useCookies } from "react-cookie";
+import { connectSocket } from '../utils/socket/socket';
 
 function Layout() {
+
+const [cookies]=useCookies(["accessToken"])
+
+useEffect(()=>{
+  if(cookies.accessToken){
+    const socket = connectSocket(cookies.accessToken)
+    socket.on("connect",()=>{
+      console.log(`${socket.id} is connected`)
+    })
+    
+    socket.on("disconnect", (reason) => {
+  console.log(`❌ Disconnected. Reason: ${reason}`);
+});
+  }
+},[cookies.accessToken])
+  
   return (
     <div className="min-h-screen flex flex-col">
       <header className="w-full">
