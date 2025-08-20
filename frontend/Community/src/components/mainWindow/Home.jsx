@@ -8,7 +8,7 @@ function Home() {
 
 
   const userLoggedIn = useSelector((state)=>state.auth)
-  console.log(userLoggedIn)
+  // console.log(userLoggedIn)
   return (
   <>
   <h1>home page</h1>

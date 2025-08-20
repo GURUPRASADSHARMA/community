@@ -16,7 +16,7 @@ import { useEffect } from 'react'
 import { checkAuth } from './components/storeslice/features/AuthSlice.js'
 import SearchFriend from './components/searchfriend/SearchFriend.jsx'
 import EmailVerification from './components/verifyEmail/VerifyEmail.jsx'
-
+import { CookiesProvider } from 'react-cookie'
 
 
 
@@ -48,7 +48,9 @@ const {isLoggedIn} = useSelector((state)=>state.auth)
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Provider store={store}>
+      <CookiesProvider>
     <Main/>
+      </CookiesProvider>
     </Provider>
     {/* <App /> */}
   </StrictMode>,

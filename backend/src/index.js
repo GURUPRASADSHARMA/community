@@ -3,6 +3,9 @@ import {app} from "./app.js"
 import http from 'http'
 import { Server } from "socket.io";
 import jwt from 'jsonwebtoken'
+import cookie from "cookie";
+
+
 
 
 const server = http.createServer(app)
@@ -15,31 +18,33 @@ const io = new Server(server,{
     }
 })
 
-io.use((socket,next)=>{
+io.use((socket, next) => {
+  try {
+    const rawCookie = socket.handshake.headers.cookie;
+    if (!rawCookie) return next(new Error("No cookies sent"));
 
-const token = socket.handshake.auth.token
-if(!token){
-    return next(new Error("invalid credential"))
-}
+    const parsed = cookie.parse(rawCookie);
+    const token = parsed.accessToken;
+    if (!token) return next(new Error("No accessToken cookie"));
 
-try {
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRATE);
+    socket.userId = decoded._id;
 
-    const decodedToken = jwt.verify(token,process.env.ACCESS_TOKEN_SECRATE);
-    socket.userId = decodedToken._id;
     next();
-    
-} catch (error) {
-    console.log("thier is an error while verifying jwt in socket connection")
-}
-
-})
+  } catch (err) {
+    console.error("❌ Socket auth failed:", err.message);
+    next(new Error("Authentication failed"));
+  }
+});
 io.on("connection",(socket)=>{
     console.log(`${socket.userId} is connected to socket`)
+
+    socket.on("disconnect",(reason )=>{
+         console.log(`${socket.userId} is disconnected reason:${reason}`)
+    })
+ 
 })
 
-socket.on("disconnect",(reason )=>{
-     console.log(`${socket.userId} is disconnected reason:${reason}`)
-})
 
  connectDb()
 .then(()=>{

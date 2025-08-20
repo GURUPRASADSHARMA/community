@@ -1,21 +1,22 @@
 // import React from 'react'
 import Header from './components/header/header'
-import Landing from './components/landingpage/Landing';
+// import Landing from './components/landingpage/Landing';
 import Sidebar from './components/sideBar/Sidebar'
-import React from 'react';
+
 import { Outlet } from 'react-router-dom';
 // import Header from './Header';
 // import Sidebar from './Sidebar';
-import { useCookies } from "react-cookie";
-import { connectSocket } from '../utils/socket/socket';
+
+import { useEffect } from 'react';
+import { connectSocket } from './utils/socket/socket';
+
 
 function Layout() {
 
-const [cookies]=useCookies(["accessToken"])
+
 
 useEffect(()=>{
-  if(cookies.accessToken){
-    const socket = connectSocket(cookies.accessToken)
+    const socket = connectSocket()
     socket.on("connect",()=>{
       console.log(`${socket.id} is connected`)
     })
@@ -23,8 +24,8 @@ useEffect(()=>{
     socket.on("disconnect", (reason) => {
   console.log(`❌ Disconnected. Reason: ${reason}`);
 });
-  }
-},[cookies.accessToken])
+  
+},[])
   
   return (
     <div className="min-h-screen flex flex-col">
