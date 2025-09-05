@@ -9,6 +9,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import jwt from "jsonwebtoken"
 import bcrypt from 'bcrypt'
 import SendVerificationCode from "../utils/SendVerificationCode.js"
+import { Message } from "../models/message.model.js"
 
 const generateAccessAndRefreshToken = async (userId) => {
 
@@ -325,20 +326,39 @@ const sendFriendRequest = asyncHandler(async (req, res) => {
     }
     if (senderId.toString() === receiverId.toString()) {
         throw new ApiError(400, "you cannot send follow request to yourself")
+        // return res
+        // .status(404)
+        // .json({
+        //     message:"you cannot send follow request to yourself"
+        // })
+        
     }
     const receiver = await User.findById(receiverId).select("_id username");
     if (!receiver) {
         throw new ApiError(404, "Receiver not found");
     }
     try {
-        const existingRequest = await FriendRequest.findOne({ sender: senderId, receiver: receiverId })
+        const existingRequest = await FriendRequest.findOne(
+           {$or:[
+            { sender: senderId, receiver: receiverId },
+            { sender: receiverId, receiver: senderId }
+           ]} 
+        )
         if (existingRequest) {
-            throw new ApiError(409, "request already sent")
+            throw new ApiError(409, "request already exist")
         }
 
         const friendRequest = new FriendRequest({ sender: senderId, receiver: receiverId })
         await friendRequest.save({ validateBeforeSave: false })
 
+
+        const sender = await User.findByIdAndUpdate(senderId,
+            {
+                $push: { requestSent: receiverId || "" }
+            },
+            { new: true }
+        ).select("requestSent")
+        // console.log(sender)
 
         // loaded and slower version or logic
 
@@ -348,12 +368,6 @@ const sendFriendRequest = asyncHandler(async (req, res) => {
         // }
         // reciever.pendingRequest.push(senderId);
         // await reciever.save()
-        // const sender = await User.findByIdAndUpdate(senderId,
-        //     {
-        //         $push: { requestSent: receiverId || "" }
-        //     },
-        //     { new: true }
-        // )
 
         //faster logic and less db call
 
@@ -376,12 +390,16 @@ const pendingRequest = asyncHandler(async (req, res) => {
         const request = await FriendRequest.find({
             receiver: req.user?._id,
             status: "pending"
-        }).populate("sender", "username email profileImage _id fullname")
-         if (request.length === 0) {
+        })
+        .select("sender -_id")
+        .populate("sender", "username email profileImage _id fullname")
+        const data = request.map((r)=>(r.sender))
+         if (data.length === 0) {
     return res.status(200).json(new ApiResponse(200, [], "No friends found"));}
+            console.log(data)
         return res
             .status(200)
-            .json(new ApiResponse(200, request, "pending request fetched succesfully"))
+            .json(new ApiResponse(200, data, "pending request fetched succesfully"))
 
     } catch (error) {
         throw new ApiError(500, error.message || "error during fetching request")
@@ -394,12 +412,16 @@ const requestSent = asyncHandler(async (req, res) => {
         const request = await FriendRequest.find({
             sender: req.user?._id,
             status: "pending"
-        }).populate("receiver", "username email profileImage _id fullname")
+        })
+        .select("receiver -_id")
+        .populate("receiver", "username email profileImage _id fullname")
         if (request.length === 0) {
     return res.status(200).json(new ApiResponse(200, [], "No friends found"));}
+    const receiver = request.map((r)=>r.receiver);
+    // console.log(receiver)
         return res
             .status(200)
-            .json(new ApiResponse(200, request, "pending request fetched succesfully"))
+            .json(new ApiResponse(200, receiver, "pending request fetched succesfully"))
 
     } catch (error) {
         throw new ApiError(500, error.message || "error during fetching request")
@@ -408,14 +430,16 @@ const requestSent = asyncHandler(async (req, res) => {
 
 
 const acceptRequest = asyncHandler(async (req, res) => {
-    const session = await mongoose.startSession()
+    // const session = await mongoose.startSession()
     const { senderUsername } = req.body
+    console.log(senderUsername)
     if (!senderUsername) {
         throw new ApiError(404, "please provide a valid username to accept the friend request")
     }
     const sender = await User.findOne({
         username: senderUsername
     }).select(" _id username ")
+    console.log(sender._id)
     const receiverId = req.user?._id;
     if (!receiverId) {
         throw new ApiError(404, "please login")
@@ -423,30 +447,29 @@ const acceptRequest = asyncHandler(async (req, res) => {
     if (senderUsername === req.user.username) {
         throw new ApiError(400, "Cannot accept your own friend request");
     }
-    session.startTransaction();
+   console.log(receiverId)
     try {
         const updateFriendRequestModel = await FriendRequest.findOneAndUpdate({
-            senderId: sender?._id,
-            receiverId: receiverId
+            sender: sender?._id,
+            receiver: receiverId
         },
             { status: "accepted" },
-            { new: true, session }
+            { new: true}
         )
 
         if (!updateFriendRequestModel) {
             throw new ApiError(404, "failed to update friendrequest model")
         }
+        console.log(updateFriendRequestModel)
         const recieverUsername = req.user?.username
-        await session.commitTransaction();
-        session.endSession()
         return res.status(202).json({
             message: `${sender.username} and ${recieverUsername} are now friends`
         });
     } catch (error) {
-        await session.abortTransaction()
+        // await session.abortTransaction()
+        console.log(error)
         throw new ApiError(500, "something went wrong during accepting friend request")
     }
-
 })
 
 
@@ -482,7 +505,6 @@ const getFriends = asyncHandler(async (req, res) => {
             fullname: friendUser.fullname,
             email: friendUser.email,
             profileImage: friendUser.profileImage,
-
         }
     })
 
@@ -491,6 +513,30 @@ return res
 .json(new ApiResponse(200,friendList,"friends are fetched sucessfully"))
 
 })
+
+
+
+
+// socket message sending for offline user
+const getMessage = asyncHandler(async (req,res)=>{
+    const {roomId} = req.body
+    const limit = 20;
+    const page=1;
+const message = await  Message.find({
+    roomId:roomId
+})
+.sort({createdAt:-1})
+.skip((page-1)*limit)
+.limit(limit)
+.lean();
+
+
+return res
+.status(200)
+.json(new ApiResponse(200,message.reverse(),"sucessfully fetched the message"))
+
+})
+
 
 export {
     registerUser,
@@ -506,5 +552,6 @@ export {
     findMe,
     verifyEmail,
     getFriends,
-    requestSent
+    requestSent,
+    getMessage
 }

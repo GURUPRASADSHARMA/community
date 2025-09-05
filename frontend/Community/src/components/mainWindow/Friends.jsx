@@ -1,34 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { User, MessageCircle, UserPlus, Clock, Send, Smile, Paperclip, X } from 'lucide-react';
-import axios from 'axios'
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { User, Clock, UserPlus, MessageCircle, X, Paperclip, Smile, Send } from "lucide-react";
+import { useSelector } from "react-redux";
+import { getSocket } from "../../utils/socket/socket";
 const mockFriends = [
   {
-    id: '1',
-    fullName: 'Alice Johnson',
-    username: '@alice_j',
-    profilePic: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    isOnline: true,
-  },
-  {
-    id: '2',
-    fullName: 'Bob Smith',
-    username: '@bob_smith',
-    profilePic: 'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    isOnline: false,
-    lastSeen: '2 hours ago',
-  },
-  {
-    id: '3',
+    _id: '3',
     fullName: 'Carol Davis',
     username: '@carol_d',
-    profilePic: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    profileImage: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
     isOnline: true,
   },
   {
-    id: '4',
+    _id: '4',
     fullName: 'David Wilson',
     username: '@david_w',
-    profilePic: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    profileImage: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
     isOnline: false,
     lastSeen: '1 day ago',
   }
@@ -36,177 +23,212 @@ const mockFriends = [
 
 const mockPendingRequests = [
   {
-    id: '5',
-    fullName: 'Emma Brown',
+    _id: '5',
+    fullname: 'Emma Brown',
     username: '@emma_b',
-    profilePic: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    profileImage: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
     isOnline: true,
   },
-  {
-    id: '6',
-    fullName: 'Frank Miller',
-    username: '@frank_m',
-    profilePic: 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    isOnline: false,
-    lastSeen: '30 minutes ago',
-  }
 ];
 
 const mockSentRequests = [
   {
-    id: '7',
-    fullName: 'Grace Lee',
+    _id: '7',
+    fullname: 'Grace Lee',
     username: '@grace_lee',
-    profilePic: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
-    isOnline: true,
-  },
-  {
-    id: '8',
-    fullName: 'Henry Taylor',
-    username: '@henry_t',
-    profilePic: 'https://images.pexels.com/photos/1212984/pexels-photo-1212984.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+    email: "",
+    profileImage: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
     isOnline: false,
-    lastSeen: '5 minutes ago',
-  }
+  },
 ];
 
 const mockMessages = [
   {
-    id: '1',
+    _id: '1',
     senderId: 'me',
-    content: 'Hey! How are you doing?',
+    message: 'Hey! How are you doing?',
     timestamp: new Date('2025-01-27T10:30:00'),
     isRead: true,
   },
-  {
-    id: '2',
-    senderId: '1',
-    content: 'Hi! I\'m doing great, thanks for asking! How about you?',
-    timestamp: new Date('2025-01-27T10:31:00'),
-    isRead: true,
-  },
-  {
-    id: '3',
-    senderId: 'me',
-    content: 'I\'m good too! Working on some exciting projects.',
-    timestamp: new Date('2025-01-27T10:32:00'),
-    isRead: true,
-  },
-  {
-    id: '4',
-    senderId: '1',
-    content: 'That sounds awesome! Would love to hear more about it sometime.',
-    timestamp: new Date('2025-01-27T10:33:00'),
-    isRead: false,
-  }
 ];
-
-function FriendCard({ friend, showMessageButton = false, onMessage }) {
+function FriendCard({ friend, showMessageButton = false, onMessage, isPending = false }) {
+  const [accepted, setAccepted] = useState(false);
+  const acceptRequest = async () => {
+    const res = await axios.post("/api/v1/user/accept-request", {
+      senderUsername: friend.username
+    })
+    console.log(res)
+    if (res) {
+      setAccepted(true)
+    }
+  }
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
-      <div className="flex items-center space-x-4">
-        <div className="relative">
-          <img
-            src={friend.profilePic}
-            alt={friend.fullName}
-            className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100"
-          />
-          <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${
-            friend.isOnline ? 'bg-green-500' : 'bg-gray-400'
-          } transition-colors duration-200`}></div>
+      <div className="flex items-center justify-between">
+        {/* Left side: avatar + details */}
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-shrink-0">
+            <img
+              src={friend.profileImage}
+              alt={friend.fullname}
+              className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100"
+            />
+            <div
+              className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${friend.isOnline ? "bg-green-500" : "bg-gray-400"
+                } transition-colors duration-200`}
+            ></div>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-gray-900 text-lg">{friend.fullname}</h3>
+            <p className="text-gray-500 text-sm">{friend.username}</p>
+            {!friend.isOnline && friend.lastSeen && (
+              <p className="text-gray-400 text-xs mt-1">Last seen {friend.lastSeen}</p>
+            )}
+            {friend.isOnline && (
+              <p className="text-green-500 text-xs mt-1 font-medium">Online</p>
+            )}
+          </div>
         </div>
-        
-        <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 text-lg">{friend.fullName}</h3>
-          <p className="text-gray-500 text-sm">{friend.username}</p>
-          {!friend.isOnline && friend.lastSeen && (
-            <p className="text-gray-400 text-xs mt-1">Last seen {friend.lastSeen}</p>
+
+        {/* Right side: buttons */}
+        <div className="flex items-center space-x-2">
+          {showMessageButton && (
+            <button
+              onClick={() => onMessage && onMessage(friend)}
+              className="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-200 transform hover:scale-110 active:scale-95"
+            >
+              <MessageCircle size={20} />
+            </button>
           )}
-          {friend.isOnline && (
-            <p className="text-green-500 text-xs mt-1 font-medium">Online</p>
+
+          {isPending && (
+            <button
+              onClick={acceptRequest}
+              disabled={accepted}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${accepted
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  : "bg-green-500 hover:bg-green-600 text-white"
+                }`}
+            >
+              {accepted ? "Accepted" : "Accept"}
+            </button>
           )}
         </div>
-        
-        {showMessageButton && (
-          <button
-            onClick={() => onMessage && onMessage(friend)}
-            className="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-200 transform hover:scale-110 active:scale-95"
-          >
-            <MessageCircle size={20} />
-          </button>
-        )}
       </div>
     </div>
   );
 }
 
 function MessagePanel({ friend, isOpen, onClose }) {
+  if (!friend) return null;
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState(mockMessages);
   const [isTyping, setIsTyping] = useState(false);
+  const { _id, username } = useSelector((state) => state.auth.user)
+  // console.log(_id)
+  // console.log(friend)
 
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
+  const roomId = [_id, friend._id].sort().join("_")
+
+  const socket = getSocket();
+
+  socket.emit("joinroom", {roomId});
+
+  const handleSend = () => {
+    // console.log(messages)
+    if (newMessage.trim() == "") return;
+    const tempId = Date.now();
+    const messageData = {
+      roomId,
+      senderId: _id,
+      receiverId: friend._id,
+      senderUsername: username,
+      message: newMessage,
+      createdAt: new Date(),
+      status: "sent",
+      tempId
+    }
     
-    const message = {
-      id: Date.now().toString(),
-      senderId: 'me',
-      content: newMessage,
-      timestamp: new Date(),
-      isRead: false,
-    };
-    
-    setMessages(prev => [...prev, message]);
-    setNewMessage('');
-    
-    // Simulate typing indicator
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      const replyMessage = {
-        id: (Date.now() + 1).toString(),
-        senderId: friend?.id || '1',
-        content: 'Thanks for your message! 😊',
-        timestamp: new Date(),
-        isRead: false,
-      };
-      setMessages(prev => [...prev, replyMessage]);
-    }, 2000);
-  };
+    const myMessage = { ...messageData, _id: tempId, senderId: "me" }
+    setMessages((prev) => [...prev, myMessage]);
+    socket.emit("sendmessage", messageData);
+    setNewMessage("") 
+  }
+
+  useEffect(() => {
+    // console.log(messages)
+    const handler = (data) => {
+      // console.log(data)
+      setMessages((prev) => {
+        const exist = prev.some((msg) => msg.tempId && msg.tempId == data.tempId)
+        if (exist) {
+          return prev.map((msg) => msg.tempId && msg.tempId == data.tempId ?
+            { ...data, senderId: msg.senderId == "me" ? "me" : data.senderId }
+            : msg)
+        }
+        else {
+          return [...prev, data];
+        }
+      })
+
+      if (data._id) {
+        socket.emit("messagereceived", { messageId: data._id })
+      }
+      // console.log(data)
+    }
+    socket.on("newmessage", handler);
+    return () => socket.off("newmessage", handler)
+  }, [socket])
+
+  useEffect(()=>{
+
+    const getMessage = async ()=>{
+     const data =  await axios.post("/api/v1/user/getmessage",{
+        roomId:roomId
+      })
+      const messageArr = data.data.data
+      // console.log(data.data.data);
+      const updatedMessage = messageArr.map((msg)=>({
+        ...msg,
+        senderId:msg.senderId == _id ? "me" : msg.senderId
+      }))
+      // console.log(updatedMessage);
+      setMessages(updatedMessage)
+    }
+    getMessage();
+  },[])
+
 
   const formatTime = (date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
+    if (!date) return "";
+    const d = new Date(date);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
 
   return (
     <>
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black transition-opacity duration-300 z-40 ${
-          isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-black transition-opacity duration-300 z-40 ${isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={onClose}
       />
-      
+
       {/* Message Panel */}
-      <div className={`fixed right-0 top-0 h-full w-96 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div className={`fixed right-0 top-0 h-full w-96 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
         {friend && (
           <>
             {/* Header */}
             <div className="bg-blue-500 text-white p-6 flex items-center space-x-4">
               <img
-                src={friend.profilePic}
-                alt={friend.fullName}
+                src={friend.profileImage}
+                alt={friend.fullname}
                 className="w-12 h-12 rounded-full object-cover ring-2 ring-white/20"
               />
               <div className="flex-1">
-                <h3 className="font-semibold text-lg">{friend.fullName}</h3>
+                <h3 className="font-semibold text-lg">{friend.fullname}</h3>
                 <p className="text-blue-100 text-sm">{friend.username}</p>
                 <div className="flex items-center mt-1">
                   <div className={`w-2 h-2 rounded-full mr-2 ${friend.isOnline ? 'bg-green-400' : 'bg-gray-400'}`}></div>
@@ -227,24 +249,22 @@ function MessagePanel({ friend, isOpen, onClose }) {
             <div className="h-[calc(100%-180px)] overflow-y-auto p-4 space-y-4">
               {messages.map((message) => (
                 <div
-                  key={message.id}
+                  key={message._id}
                   className={`flex ${message.senderId === 'me' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
                 >
-                  <div className={`max-w-[80%] p-3 rounded-2xl ${
-                    message.senderId === 'me'
+                  <div className={`max-w-[80%] p-3 rounded-2xl ${message.senderId === 'me'
                       ? 'bg-blue-500 text-white ml-4'
                       : 'bg-gray-100 text-gray-800 mr-4'
-                  } shadow-sm`}>
-                    <p className="text-sm">{message.content}</p>
-                    <p className={`text-xs mt-1 ${
-                      message.senderId === 'me' ? 'text-blue-100' : 'text-gray-500'
-                    }`}>
-                      {formatTime(message.timestamp)}
+                    } shadow-sm`}>
+                    <p className="text-sm">{message.message}</p>
+                    <p className={`text-xs mt-1 ${message.senderId === 'me' ? 'text-blue-100' : 'text-gray-500'
+                      }`}>
+                      {formatTime(message.createdAt)}
                     </p>
                   </div>
                 </div>
               ))}
-              
+
               {isTyping && (
                 <div className="flex justify-start animate-pulse">
                   <div className="bg-gray-100 text-gray-800 p-3 rounded-2xl mr-4 shadow-sm">
@@ -268,7 +288,7 @@ function MessagePanel({ friend, isOpen, onClose }) {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Type a message..."
                   className="flex-1 border border-gray-200 rounded-full px-4 py-2 focus:outline-none focus:border-blue-500 transition-colors duration-200"
                 />
@@ -276,7 +296,7 @@ function MessagePanel({ friend, isOpen, onClose }) {
                   <Smile size={20} />
                 </button>
                 <button
-                  onClick={sendMessage}
+                  onClick={handleSend}
                   disabled={!newMessage.trim()}
                   className="p-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-full transition-all duration-200 transform hover:scale-110 active:scale-95 disabled:cursor-not-allowed disabled:transform-none"
                 >
@@ -293,56 +313,49 @@ function MessagePanel({ friend, isOpen, onClose }) {
 
 function App() {
 
-  async function getfriend(){
+  async function getfriend() {
     try {
       const friends = await axios.get("/api/v1/user/getfriends");
-      // console.log("hii getfriend")
-      console.log(friends.data.data)
       mockFriends.push(...(friends.data.data || []))
     } catch (error) {
       console.log(error)
     }
   }
-  async function pendingRequest(){
+
+
+  async function pendingRequest() {
     try {
       const friends = await axios.get("/api/v1/user/pending-request");
-      console.log(friends.data.data)
-      // console.log("hii pending request")
       mockPendingRequests.push(...(friends.data.data || []))
     } catch (error) {
       console.log(error)
     }
   }
-  async function requestSent(){
+
+
+  async function requestSent() {
     try {
       const friends = await axios.get("/api/v1/user/request-sent");
-      console.log(friends.data.data)
       mockSentRequests.push(...(friends.data.data || []))
     } catch (error) {
       console.log(error)
     }
   }
 
-   useEffect(() => {
-  const fetchAll = async () => {
-    try {
-    
-      await getfriend();
 
-      await pendingRequest();
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        await getfriend();
+        await pendingRequest();
+        await requestSent();
+      } catch (error) {
+        console.error("❌ Error in fetchAll():", error?.response?.data || error.message || error);
+      }
+    };
 
-      await requestSent();
-
-    } catch (error) {
-      console.error("❌ Error in fetchAll():", error?.response?.data || error.message || error);
-    }
-  };
-
-  fetchAll();
-  // getfriend();
-  // pendingRequest();
-  // requestSent();
-}, []);
+    fetchAll();
+  }, []);
 
 
   const [activeTab, setActiveTab] = useState('friends');
@@ -390,19 +403,17 @@ function App() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-full transition-all duration-200 transform ${
-                  activeTab === tab.id
+                className={`flex items-center space-x-2 px-6 py-3 rounded-full transition-all duration-200 transform ${activeTab === tab.id
                     ? 'bg-blue-500 text-white shadow-md scale-105'
                     : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <tab.icon size={18} />
                 <span className="font-medium">{tab.label}</span>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  activeTab === tab.id
+                <span className={`px-2 py-1 text-xs rounded-full ${activeTab === tab.id
                     ? 'bg-white/20 text-white'
                     : 'bg-gray-200 text-gray-600'
-                }`}>
+                  }`}>
                   {tab.count}
                 </span>
               </button>
@@ -414,7 +425,7 @@ function App() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {getCurrentData().map((friend, index) => (
             <div
-              key={friend.id}
+              key={friend._id}
               className="animate-fadeIn"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
@@ -422,6 +433,7 @@ function App() {
                 friend={friend}
                 showMessageButton={activeTab === 'friends'}
                 onMessage={handleMessage}
+                isPending={activeTab === 'pending'}
               />
             </div>
           ))}

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { acceptRequest, findMe, findUser, getFriends, pendingRequest, refreshAccessToken, registerUser, requestSent, sendFriendRequest, userLogin, userLogout, verifyEmail } from "../controllers/user.controller.js";
+import { acceptRequest, findMe, findUser, getFriends, getMessage, pendingRequest, refreshAccessToken, registerUser, requestSent, sendFriendRequest, userLogin, userLogout, verifyEmail } from "../controllers/user.controller.js";
 import { verifyJwtToken } from "../middleware/auth.js"
 import { upload } from "../middleware/multer.middleware.js";
 
@@ -24,6 +24,8 @@ router.route("/request-sent").get(verifyJwtToken,requestSent)
 router.route("/accept-request").post(verifyJwtToken,acceptRequest)
 router.route("/getfriends").get(verifyJwtToken,getFriends)
 router.route("/findMe").get(verifyJwtToken,findMe)
+router.route("/getmessage").post(verifyJwtToken,getMessage)
+
 
 
 export default router

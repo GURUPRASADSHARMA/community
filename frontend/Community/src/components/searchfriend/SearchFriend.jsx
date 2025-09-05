@@ -5,16 +5,17 @@ import { useSelector } from 'react-redux';
 
 
 
+
 function SearchFriend()  {
 
-  const {requestSent} = useSelector((state)=>state.auth.user)
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [sentRequests, setSentRequests] = useState(new Set());
- const requestSentIds = new Set(requestSent.map((user)=>user))
-//  console.log(requestSentIds)
+const {requestSent} = useSelector((state)=>state.auth.user)
+const [searchQuery, setSearchQuery] = useState('');
+const [searchResults, setSearchResults] = useState([]);
+const [isLoading, setIsLoading] = useState(false);
+const [hasSearched, setHasSearched] = useState(false);
+const [sentRequests, setSentRequests] = useState(new Set());
+const requestSentIds = new Set(requestSent.map((user)=>user))
+// console.log(requestSent)
 // console.log(searchResults)
 useEffect(()=>{
   setSentRequests(requestSentIds)
@@ -27,8 +28,11 @@ useEffect(()=>{
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
       const data =  await axios.post("/api/v1/user/find-user",{username:searchQuery})
-      console.log(data.data.data)  
-      setSearchResults(data.data.data);
+      console.log(data)
+      
+   
+        setSearchResults(data.data.data);
+
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);

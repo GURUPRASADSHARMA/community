@@ -46,12 +46,12 @@ const {isLoggedIn} = useSelector((state)=>state.auth)
 
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+
     <Provider store={store}>
       <CookiesProvider>
     <Main/>
       </CookiesProvider>
     </Provider>
-    {/* <App /> */}
-  </StrictMode>,
+   
+ 
 )

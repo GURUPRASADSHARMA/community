@@ -6,12 +6,14 @@ const messageSchema = new mongoose.Schema({
     senderId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",
-        required:true
+        required:true,
+        index:true
     },
-    recieverId:{
+    receiverId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",
-        required:true
+        required:true,
+        index:true
     },
 
     roomId:{
@@ -21,7 +23,7 @@ const messageSchema = new mongoose.Schema({
 
     status:{
         type:String,
-        index:["sent","delivered","read"],
+        enum:["sent","delivered","read"],
         default:"sent",
         index:true
     },
@@ -31,6 +33,9 @@ const messageSchema = new mongoose.Schema({
         required:true,
         trim:true
     },
+
+    deliveredAt: { type: Date },
+    readAt: { type: Date },
 
 },{timestamps:true})
 

@@ -68,20 +68,20 @@ const userSchema = new Schema({
          },
 
 
-        friends:[
-            {
-                type:mongoose.Schema.Types.ObjectId,
-                ref:"User"
-            },
+        // friends:[
+        //     {
+        //         type:mongoose.Schema.Types.ObjectId,
+        //         ref:"User"
+        //     },
        
-        ],
+        // ],
         
-        pendingRequest:[
-            {
-                type:mongoose.Schema.Types.ObjectId,
-                ref:"User"
-             }
-        ],
+        // pendingRequest:[
+        //     {
+        //         type:mongoose.Schema.Types.ObjectId,
+        //         ref:"User"
+        //      }
+        // ],
         requestSent:[
             {
             type:mongoose.Schema.Types.ObjectId,
